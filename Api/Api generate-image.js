@@ -1,24 +1,34 @@
 const fetch = require('node-fetch');
 
-module.exports = async (req, res) => {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+exports.handler = async (event, context) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
   
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
   }
   
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: 'Method not allowed' })
+    };
   }
   
   try {
-    const { prompt, model } = req.body;
+    const { prompt, model } = JSON.parse(event.body);
     
     if (!prompt) {
-      return res.status(400).json({ error: 'Prompt required' });
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Prompt required' })
+      };
     }
     
     const imageModel = model || 'stability';
@@ -32,22 +42,29 @@ module.exports = async (req, res) => {
       throw new Error('Invalid image model');
     }
     
-    return res.status(200).json({ 
-      success: true,
-      imageUrl: imageUrl,
-      prompt: prompt
-    });
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ 
+        success: true,
+        imageUrl: imageUrl,
+        prompt: prompt
+      })
+    };
     
   } catch (error) {
     console.error('Image Generation Error:', error);
-    return res.status(500).json({ 
-      success: false,
-      error: error.message || 'Image generation failed'
-    });
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ 
+        success: false,
+        error: error.message || 'Image generation failed'
+      })
+    };
   }
 };
 
-// Stability AI Image Generation
 async function generateStabilityImage(prompt) {
   const response = await fetch('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image', {
     method: 'POST',
@@ -56,12 +73,7 @@ async function generateStabilityImage(prompt) {
       'Authorization': `Bearer ${process.env.STABILITY_API_KEY}`
     },
     body: JSON.stringify({
-      text_prompts: [
-        {
-          text: prompt,
-          weight: 1
-        }
-      ],
+      text_prompts: [{ text: prompt, weight: 1 }],
       cfg_scale: 7,
       height: 1024,
       width: 1024,
@@ -70,15 +82,12 @@ async function generateStabilityImage(prompt) {
     })
   });
   
-  if (!response.ok) {
-    throw new Error('Stability AI request failed');
-  }
+  if (!response.ok) throw new Error('Stability AI failed');
   
   const data = await response.json();
   return `data:image/png;base64,${data.artifacts[0].base64}`;
 }
 
-// OpenAI DALL-E Image Generation
 async function generateDALLEImage(prompt) {
   const response = await fetch('https://api.openai.com/v1/images/generations', {
     method: 'POST',
@@ -94,9 +103,7 @@ async function generateDALLEImage(prompt) {
     })
   });
   
-  if (!response.ok) {
-    throw new Error('DALL-E request failed');
-  }
+  if (!response.ok) throw new Error('DALL-E failed');
   
   const data = await response.json();
   return data.data[0].url;
