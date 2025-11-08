@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - LumiChat AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #111;
+            border-right: 1px solid rgba(21, 101, 192, 0.2);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+        
+        .sidebar.collapsed {
+            width: 0;
+            overflow: hidden;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(21, 101, 192, 0.2);
+        }
+        
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            background: linear-gradient(90deg, #ffffff, #1565c0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+        
+        .new-chat-btn {
+            width: 100%;
+            background: linear-gradient(90deg, #1565c0, #0d47a1);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .new-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(21, 101, 192, 0.4);
+        }
+        
+        .sidebar-section {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .section-title {
+            color: #9e9e9e;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            margin-top: 20px;
+        }
+        
+        .section-title:first-child {
+            margin-top: 0;
+        }
+        
+        .history-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .history-item:hover {
+            background: rgba(21, 101, 192, 0.1);
+        }
+        
+        .user-profile {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(21, 101, 192, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .user-profile:hover {
+            background: rgba(21, 101, 192, 0.05);
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .user-info {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .user-email {
+            font-size: 0.85em;
+            color: #9e9e9e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+        }
+        
+        .chat-header {
+            padding: 20px 30px;
+            background: rgba(17, 17, 17, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(21, 101, 192, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .menu-toggle {
+            background: transparent;
+            border: none;
+            color: #1565c0;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px;
+            display: none;
+        }
+        
+        .chat-title {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            scroll-behavior: smooth;
+        }
+        
+        .welcome-screen {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .welcome-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .welcome-title {
+            font-size: 2em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ffffff, #1565c0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .welcome-subtitle {
+            color: #9e9e9e;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+        
+        .suggestions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(21, 101, 192, 0.2);
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .suggestion-card:hover {
+            background: rgba(21, 101, 192, 0.1);
+            border-color: #1565c0;
+            transform: translateY(-2px);
+        }
+        
+        .suggestion-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .suggestion-text {
+            font-size: 0.9em;
+            color: #9e9e9e;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            animation: fadeInUp 0.3s;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .user-message .message-avatar {
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            color: white;
+        }
+        
+        .ai-message .message-avatar {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .message-content {
+            flex: 1;
+            max-width: 700px;
+        }
+        
+        .message-text {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 18px;
+            border-radius: 12px;
+            line-height: 1.6;
+        }
+        
+        .user-message .message-text {
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            color: white;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 15px;
+        }
+        
+        .typing-indicator.active {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #1565c0;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        /* Input Area */
+        .input-area {
+            padding: 20px 30px;
+            background: rgba(17, 17, 17, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(21, 101, 192, 0.2);
+        }
+        
+        .ai-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .ai-option {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(21, 101, 192, 0.3);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .ai-option.active {
+            background: linear-gradient(90deg, #1565c0, #0d47a1);
+            border-color: #1565c0;
+            color: white;
+        }
+        
+        .ai-option:hover:not(.active) {
+            background: rgba(21, 101, 192, 0.1);
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .input-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(21, 101, 192, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            transition: all 0.3s;
+        }
+        
+        .input-box:focus-within {
+            border-color: #1565c0;
+            box-shadow: 0 0 20px rgba(21, 101, 192, 0.2);
+        }
+        
+        #message-input {
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            font-size: 1em;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            max-height: 150px;
+            min-height: 24px;
+        }
+        
+        #message-input::placeholder {
+            color: #666;
+        }
+        
+        .input-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: #9e9e9e;
+            cursor: pointer;
+            padding: 5px;
+            transition: all 0.2s;
+            font-size: 1.2em;
+        }
+        
+        .icon-btn:hover {
+            color: #1565c0;
+            transform: scale(1.1);
+        }
+        
+        .send-btn {
+            background: linear-gradient(90deg, #1565c0, #0d47a1);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            align-self: flex-end;
+        }
+        
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(21, 101, 192, 0.4);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid rgba(21, 101, 192, 0.3);
+        }
+        
+        .modal-header {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(21, 101, 192, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #1565c0, #0d47a1);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+        
+        /* Hidden file input */
+        #image-input {
+            display: none;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                z-index: 100;
+                height: 100%;
+            }
+            
+            .sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .messages-container {
+                padding: 20px;
+            }
+            
+            .input-area {
+                padding: 15px;
+            }
+            
+            .suggestions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">LumiChat AI</div>
+                <button class="new-chat-btn" onclick="newChat()">+ New Chat</button>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-title">Projects</div>
+                <div class="history-item">🎨 Image Generation Project</div>
+                
+                <div class="section-title">Recent</div>
+                <div id="history-list"></div>
+            </div>
+            
+            <div class="user-profile" onclick="openProfileModal()">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="user-info">
+                    <div id="user-name-display">User</div>
+                    <div class="user-email" id="user-email-display">user@example.com</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="chat-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                <div class="chat-title">LumiChat AI</div>
+            </div>
+            
+            <div class="messages-container" id="messages-container">
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-icon">🤖</div>
+                    <div class="welcome-title">Welcome to LumiChat AI</div>
+                    <div class="welcome-subtitle">Your intelligent assistant powered by advanced AI</div>
+                    
+                    <div class="suggestions">
+                        <div class="suggestion-card" onclick="useSuggestion('Explain quantum computing in simple terms')">
+                            <div class="suggestion-title">💡 Explain Concepts</div>
+                            <div class="suggestion-text">Quantum computing explained</div>
+                        </div>
+                        <div class="suggestion-card" onclick="useSuggestion('Write a creative short story')">
+                            <div class="suggestion-title">✍️ Creative Writing</div>
+                            <div class="suggestion-text">Generate stories & content</div>
+                        </div>
+                        <div class="suggestion-card" onclick="useSuggestion('Help me debug this code')">
+                            <div class="suggestion-title">💻 Code Assistance</div>
+                            <div class="suggestion-text">Programming help</div>
+                        </div>
+                        <div class="suggestion-card" onclick="useSuggestion('Generate an image of a futuristic city')">
+                            <div class="suggestion-title">🎨 Image Generation</div>
+                            <div class="suggestion-text">Create AI images</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <div class="ai-selector">
+                    <div class="ai-option active" data-ai="openai" onclick="selectAI('openai')">🤖 ChatGPT</div>
+                    <div class="ai-option" data-ai="gemini" onclick="selectAI('gemini')">✨ Gemini</div>
+                    <div class="ai-option" data-ai="claude" onclick="selectAI('claude')">🧠 Claude</div>
+                </div>
+                
+                <div class="input-wrapper">
+                    <div class="input-box">
+                        <textarea id="message-input" placeholder="Type your message..." rows="1" onkeydown="handleKeyPress(event)"></textarea>
+                        <div class="input-actions">
+                            <button class="icon-btn" onclick="document.getElementById('image-input').click()" title="Upload image">📎</button>
+                            <input type="file" id="image-input" accept="image/*" onchange="handleImageUpload(event)">
+                        </div>
+                    </div>
+                    <button class="send-btn" onclick="sendMessage()" id="send-btn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Profile Modal -->
+    <div class="modal" id="profile-modal">
+        <div class="modal-content">
+            <div class="modal-header">User Profile</div>
+            <input type="password" class="modal-input" id="new-password" placeholder="New Password (optional)">
+            <div class="modal-buttons">
+                <button class="modal-btn btn-primary" onclick="changePassword()">Update Password</button>
+                <button class="modal-btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+            <div class="modal-buttons" style="margin-top: 10px;">
+                <button class="modal-btn btn-secondary" onclick="closeProfileModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://qmrdvgyyfqfdikkqirrz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtcmR2Z3l5ZnFmZGlra3FpcnJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTY4MzYsImV4cCI6MjA3NzkzMjgzNn0.cGJXrm0XHusL8tJiys0ZyI_Exr5o_5gpSu1eyDJWTlw';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentAI = 'openai';
+        let chatHistory = [];
+        let currentUser = null;
+        
+        // Check login on page load
+        window.onload = function() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            if (!isLoggedIn) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = {
+                email: localStorage.getItem('userEmail'),
+                name: localStorage.getItem('userName'),
+                id: localStorage.getItem('userId')
+            };
+            
+            document.getElementById('user-name-display').textContent = currentUser.name;
+            document.getElementById('user-email-display').textContent = currentUser.email;
+            document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+            
+            loadChatHistory();
+        };
+        
+        function selectAI(ai) {
+            currentAI = ai;
+            document.querySelectorAll('.ai-option').forEach(opt => opt.classList.remove('active'));
+            document.querySelector(`[data-ai="${ai}"]`).classList.add('active');
+        }
+        
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+        
+        function newChat() {
+            chatHistory = [];
+            document.getElementById('messages-container').innerHTML = `
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-icon">🤖</div>
+                    <div class="welcome-title">New Conversation</div>
+                    <div class="welcome-subtitle">How can I help you today?</div>
+                </div>
+            `;
+        }
+        
+        function useSuggestion(text) {
+            document.getElementById('message-input').value = text;
+            sendMessage();
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Hide welcome screen
+            const welcomeScreen = document.getElementById('welcome-screen');
+            if (welcomeScreen) welcomeScreen.style.display = 'none';
+            
+            // Add user message
+            addMessage(message, 'user');
+            chatHistory.push({ role: 'user', content: message });
+            
+            input.value = '';
+            document.getElementById('send-btn').disabled = true;
+            
+            // Show typing indicator
+            showTyping();
+            
+            // DEMO MODE: Simulate AI response
+            setTimeout(() => {
+                hideTyping();
+                
+                const responses = {
+                    openai: "This is a demo ChatGPT response. In production, this will connect to OpenAI API and give real AI responses based on your question!",
+                    gemini: "This is a demo Gemini response. Once deployed, Google's Gemini AI will provide intelligent answers here!",
+                    claude: "This is a demo Claude response. After backend setup, Anthropic's Claude will answer your queries with advanced reasoning!"
+                };
+                
+                const aiResponse = responses[currentAI] || "AI response coming soon!";
+                addMessage(aiResponse, 'ai');
+                chatHistory.push({ role: 'assistant', content: aiResponse });
+                
+                document.getElementById('send-btn').disabled = false;
+                saveChatHistory();
+            }, 1500);
+        }
+        
+        function addMessage(text, type) {
+            const container = document.getElementById('messages-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = type === 'user' ? currentUser.name.charAt(0).toUpperCase() : '🤖';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message-text';
+            textDiv.textContent = text;
+            
+            content.appendChild(textDiv);
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function showTyping() {
+            const container = document.getElementById('messages-container');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator active';
+            typingDiv.id = 'typing';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function hideTyping() {
+            const typing = document.getElementById('typing');
+            if (typing) typing.remove();
+        }
+        
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                alert('Image upload feature coming soon! This will generate AI images using Stability AI or DALL-E.');
+            }
+        }
+        
+        function loadChatHistory() {
+            const saved = localStorage.getItem(`chat_${currentUser.id}`);
+            if (saved) {
+                const history = JSON.parse(saved);
+                const historyList = document.getElementById('history-list');
+                history.forEach((chat, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    item.textContent = chat.title || `Chat ${index + 1}`;
+                    item.onclick = () => alert('Load chat feature coming soon!');
+                    historyList.appendChild(item);
+                });
+            }
+        }
+        
+        function saveChatHistory() {
+            if (chatHistory.length > 0) {
+                const saved = JSON.parse(localStorage.getItem(`chat_${currentUser.id}`) || '[]');
+                saved.push({
+                    title: chatHistory[0].content.substring(0, 30) + '...',
+                    messages: chatHistory,
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem(`chat_${currentUser.id}`, JSON.stringify(saved.slice(-10)));
+            }
+        }
+        
+        function openProfileModal() {
+            document.getElementById('profile-modal').classList.add('active');
+        }
+        
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.remove('active');
+        }
+        
+        async function changePassword() {
+            const newPassword = document.getElementById('new-password').value;
+            if (!newPassword || newPassword.length < 8) {
+                alert('Password must be at least 8 characters!');
+                return;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('users')
+                    .update({ password: newPassword })
+                    .eq('id', currentUser.id);
+                
+                if (error) throw error;
+                
+                alert('✅ Password updated successfully!');
+                document.getElementById('new-password').value = '';
+                closeProfileModal();
+            } catch (error) {
+                alert('❌ Failed to update password: ' + error.message);
+            }
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userId');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>
