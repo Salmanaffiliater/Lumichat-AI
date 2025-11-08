@@ -1,25 +1,5 @@
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    }
-  ],
-  "env": {
-    "BREVO_API_KEY": "@brevo-api-key",
-    "SENDER_EMAIL": "@sender-email",
-    "SUPABASE_URL": "@supabase-url",
-    "SUPABASE_SERVICE_KEY": "@supabase-service-key",
-    "OPENAI_API_KEY": "@openai-api-key",
-    "GEMINI_API_KEY": "@gemini-api-key",
-    "CLAUDE_API_KEY": "@claude-api-key",
-    "STABILITY_API_KEY": "@stability-api-key"
-  }
-}
+[build]
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
