@@ -1,11 +1,7 @@
 {
   "name": "lumichat-backend",
   "version": "1.0.0",
-  "description": "LumiChat AI Backend",
-  "main": "api/chat.js",
-  "scripts": {
-    "dev": "vercel dev"
-  },
+  "description": "LumiChat AI Backend - Netlify",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "node-fetch": "^2.7.0"
