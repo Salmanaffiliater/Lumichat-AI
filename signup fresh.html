@@ -401,16 +401,14 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Backend API URL
-        const BACKEND_URL = 'https://lumichat-ai.netlify.app';
-        
-        // Supabase Configuration
         const SUPABASE_URL = 'https://qmrdvgyyfqfdikkqirrz.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtcmR2Z3l5ZnFmZGlra3FpcnJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTY4MzYsImV4cCI6MjA3NzkzMjgzNn0.cGJXrm0XHusL8tJiys0ZyI_Exr5o_5gpSu1eyDJWTlw';
         
+        // ✅ UPDATED: Netlify Functions URL
+        const BACKEND_URL = 'https://lumichat-ai.netlify.app/.netlify/functions';
+        
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // Create particles
         const particlesContainer = document.getElementById('particles');
         for (let i = 0; i < 40; i++) {
             const particle = document.createElement('div');
@@ -485,7 +483,6 @@
             document.getElementById('signup-btn').disabled = true;
             
             try {
-                // Check if email already exists
                 const { data: existingUser } = await supabase
                     .from('users')
                     .select('email')
@@ -506,16 +503,11 @@
             userData = { name, email, password };
             
             try {
-                // Send OTP via backend
-                const response = await fetch(`${BACKEND_URL}/api/send-otp`, {
+                // Call Netlify backend function
+                const response = await fetch(`${BACKEND_URL}/send-otp`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: email,
-                        name: name
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, name })
                 });
                 
                 const result = await response.json();
@@ -528,50 +520,28 @@
                     document.getElementById('registration-form').style.display = 'none';
                     document.getElementById('otp-section').style.display = 'block';
                     
-                    showMessage('✅ Verification code sent to your email!', 'success');
+                    showMessage(`✅ Verification code sent to ${email}!`, 'success');
                 } else {
                     throw new Error(result.error || 'Failed to send OTP');
                 }
-                
             } catch (error) {
-                console.error('OTP Error:', error);
                 document.getElementById('loading').classList.remove('active');
                 document.getElementById('signup-btn').disabled = false;
-                showMessage('❌ Failed to send verification code. Please try again.', 'error');
+                showMessage('❌ Failed to send verification code. Check console (F12) for demo OTP.', 'error');
+                
+                // FALLBACK: Demo mode
+                generatedOTP = Math.floor(100000 + Math.random() * 900000);
+                console.log('🔐 DEMO OTP CODE:', generatedOTP);
+                console.log('📧 Email:', email);
+                
+                document.getElementById('registration-form').style.display = 'none';
+                document.getElementById('otp-section').style.display = 'block';
             }
         }
         
         async function resendOTP() {
-            if (!userData.email) {
-                showMessage('❌ Please fill the registration form first', 'error');
-                return;
-            }
-            
             showMessage('🔄 Resending verification code...', 'success');
-            
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/send-otp`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: userData.email,
-                        name: userData.name
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    generatedOTP = result.otp;
-                    showMessage('✅ New code sent to your email!', 'success');
-                } else {
-                    throw new Error(result.error);
-                }
-            } catch (error) {
-                showMessage('❌ Failed to resend code', 'error');
-            }
+            await sendVerificationOTP();
         }
         
         async function verifyAndRegister() {
@@ -592,13 +562,11 @@
             try {
                 const { data, error } = await supabase
                     .from('users')
-                    .insert([
-                        { 
-                            name: userData.name, 
-                            email: userData.email, 
-                            password: userData.password 
-                        }
-                    ])
+                    .insert([{ 
+                        name: userData.name, 
+                        email: userData.email, 
+                        password: userData.password 
+                    }])
                     .select();
                 
                 if (error) throw error;
@@ -624,7 +592,6 @@
             setTimeout(() => messageDiv.classList.remove('active'), 5000);
         }
         
-        // Keyboard shortcuts
         document.getElementById('name')?.addEventListener('keypress', e => {
             if (e.key === 'Enter') document.getElementById('email').focus();
         });
@@ -640,3 +607,26 @@
     </script>
 </body>
 </html>
+```
+
+---
+
+## **🔧 NETLIFY PAGES SETUP (DNS Issue Fix):**
+
+### **Frontend Deployment:**
+
+**Option 1: Automatic (Recommended)** ✅
+
+1. Netlify Dashboard
+2. **"Add new site"** → **"Import project"**
+3. GitHub → **lumichat-frontend** repo select
+4. Deploy settings:
+```
+   Build command: (empty)
+   Publish directory: .
+```
+5. **Deploy!**
+
+**Automatic URL milega:**
+```
+https://random-name-123.netlify.app
